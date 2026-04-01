@@ -6,7 +6,7 @@
   "main": "dist/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && echo 'Build complete'" ,
     "start": "node dist/src/server.js",
     "migrate": "node --loader tsx src/database/migrate.ts",
     "seed": "node --loader tsx src/database/seed.ts",
