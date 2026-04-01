@@ -230,9 +230,10 @@ async function startServer() {
   try {
     console.log('🚀 启动后端服务...');
 
-    // 启动服务器
-    app.listen(PORT, () => {
-      console.log(`
+    // 仅在非 Vercel 环境下启动监听
+    if (process.env.VERCEL !== 'true' && process.env.NODE_ENV !== 'production') {
+      app.listen(PORT, () => {
+        console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                 🐾 PUPY爪住 后端服务启动 🐾                 ║
 ╠════════════════════════════════════════════════════════════╣
@@ -242,12 +243,17 @@ async function startServer() {
 ║ API状态: http://localhost:${PORT}/api/v1/status              ║
 ║ API文档: http://localhost:${PORT}/api/v1                     ║
 ╚════════════════════════════════════════════════════════════╝
-      `);
-    });
+        `);
+      });
+    }
   } catch (error) {
     console.error('❌ 服务器启动失败:', error);
-    process.exit(1);
+    if (process.env.VERCEL !== 'true') {
+      process.exit(1);
+    }
   }
 }
 
-startServer();
+if (process.env.VERCEL !== 'true') {
+  startServer();
+}
