@@ -6,14 +6,14 @@
   "main": "dist/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "npx tsc",
+    "prebuild": "npm install",
+    "build": "./node_modules/.bin/tsc",
     "start": "node dist/src/server.js",
-    "postbuild": "npm run type-check",
     "migrate": "node --loader tsx src/database/migrate.ts",
     "seed": "node --loader tsx src/database/seed.ts",
     "test": "vitest",
     "lint": "eslint src --ext .ts",
-    "type-check": "npx tsc --noEmit"
+    "type-check": "./node_modules/.bin/tsc --noEmit"
   },
   "dependencies": {
     "express": "^4.18.2",
