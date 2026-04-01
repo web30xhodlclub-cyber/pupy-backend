@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUPY 爪住 - 后端数据管理面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        header .icon {
+            font-size: 40px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .refresh-btn.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .time-display {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #10b981;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #334155;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab-btn:hover {
+            color: #06b6d4;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #0f172a;
+            border-bottom: 2px solid #334155;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #334155;
+            color: #e2e8f0;
+        }
+
+        tr:hover {
+            background: #0f172a;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            color: #10b981;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            border-top: 2px solid #334155;
+            padding-top: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #334155;
+            border-top-color: #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #7f1d1d;
+            border: 2px solid #dc2626;
+            color: #fecaca;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #064e3b;
+            border: 2px solid #10b981;
+            color: #a3f5d4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #334155;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.active {
+            background: #10b981;
+            color: #0f172a;
+        }
+
+        .badge.inactive {
+            background: #ef4444;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tab-btn {
+                padding: 10px 16px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <span class="icon">🐾</span>
+                <span>PUPY 爪住 - 后端数据管理面板</span>
+            </h1>
+            <div class="header-right">
+                <button class="refresh-btn" id="refreshBtn">🔄 刷新数据</button>
+                <div class="time-display" id="timeDisplay"></div>
+            </div>
+        </header>
+
+        <div id="message" style="display: none; margin-bottom: 20px;"></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="users">👥 用户</button>
+            <button class="tab-btn" data-tab="pets">🐾 宠物</button>
+            <button class="tab-btn" data-tab="matches">💕 配对</button>
+            <button class="tab-btn" data-tab="conversations">💬 对话</button>
+            <button class="tab-btn" data-tab="messages">💌 消息</button>
+            <button class="tab-btn" data-tab="products">🛍️ 商品</button>
+            <button class="tab-btn" data-tab="notifications">🔔 通知</button>
+        </div>
+
+        <!-- 用户标签页 -->
+        <div id="users" class="tab-content active">
+            <div class="search-bar">
+                <input type="text" id="usersSearch" class="search-input" placeholder="搜索用户 (邮箱/用户名)...">
+                <button class="btn btn-primary" id="addUserBtn">➕ 新增用户</button>
+            </div>
+            <div id="usersTable" class="table-container"></div>
+        </div>
+
+        <!-- 宠物标签页 -->
+        <div id="pets" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="petsSearch" class="search-input" placeholder="搜索宠物 (名字/品种)...">
+                <button class="btn btn-primary" id="addPetBtn">➕ 新增宠物</button>
+            </div>
+            <div id="petsTable" class="table-container"></div>
+        </div>
+
+        <!-- 配对标签页 -->
+        <div id="matches" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="matchesSearch" class="search-input" placeholder="搜索配对...">
+            </div>
+            <div id="matchesTable" class="table-container"></div>
+        </div>
+
+        <!-- 对话标签页 -->
+        <div id="conversations" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="conversationsSearch" class="search-input" placeholder="搜索对话...">
+            </div>
+            <div id="conversationsTable" class="table-container"></div>
+        </div>
+
+        <!-- 消息标签页 -->
+        <div id="messages" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="messagesSearch" class="search-input" placeholder="搜索消息...">
+            </div>
+            <div id="messagesTable" class="table-container"></div>
+        </div>
+
+        <!-- 商品标签页 -->
+        <div id="products" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="productsSearch" class="search-input" placeholder="搜索商品...">
+                <button class="btn btn-primary" id="addProductBtn">➕ 新增商品</button>
+            </div>
+            <div id="productsTable" class="table-container"></div>
+        </div>
+
+        <!-- 通知标签页 -->
+        <div id="notifications" class="tab-content">
+            <div class="search-bar">
+                <input type="text" id="notificationsSearch" class="search-input" placeholder="搜索通知...">
+            </div>
+            <div id="notificationsTable" class="table-container"></div>
+        </div>
+    </div>
+
+    <!-- 编辑/新增模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api/admin';
+        let currentTab = 'users';
+        let allData = {};
+
+        // ================= 初始化 =================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+            setupEventListeners();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('zh-CN');
+        }
+
+        function setupEventListeners() {
+            // 刷新按钮
+            document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+
+            // 标签页切换
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentTab = e.target.dataset.tab;
+                    document.getElementById(currentTab).classList.add('active');
+                });
+            });
+
+            // 搜索功能
+            document.getElementById('usersSearch').addEventListener('input', (e) => renderUsers(e.target.value));
+            document.getElementById('petsSearch').addEventListener('input', (e) => renderPets(e.target.value));
+            document.getElementById('matchesSearch').addEventListener('input', (e) => renderMatches(e.target.value));
+            document.getElementById('conversationsSearch').addEventListener('input', (e) => renderConversations(e.target.value));
+            document.getElementById('messagesSearch').addEventListener('input', (e) => renderMessages(e.target.value));
+            document.getElementById('productsSearch').addEventListener('input', (e) => renderProducts(e.target.value));
+            document.getElementById('notificationsSearch').addEventListener('input', (e) => renderNotifications(e.target.value));
+
+            // 新增按钮
+            document.getElementById('addUserBtn').addEventListener('click', () => showEditModal('users', null));
+            document.getElementById('addPetBtn').addEventListener('click', () => showEditModal('pets', null));
+            document.getElementById('addProductBtn').addEventListener('click', () => showEditModal('products', null));
+
+            // 模态框关闭
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('editModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('editModal')) closeModal();
+            });
+        }
+
+        async function loadAllData() {
+            document.getElementById('refreshBtn').classList.add('loading');
+            try {
+                const [users, pets, matches, conversations, messages, products, notifications] = await Promise.all([
+                    fetchData('/users'),
+                    fetchData('/pets'),
+                    fetchData('/matches'),
+                    fetchData('/conversations'),
+                    fetchData('/messages'),
+                    fetchData('/products'),
+                    fetchData('/notifications')
+                ]);
+
+                allData = { users, pets, matches, conversations, messages, products, notifications };
+                
+                // 更新统计卡片
+                updateStats();
+                
+                // 渲染当前标签页
+                if (currentTab === 'users') renderUsers();
+                else if (currentTab === 'pets') renderPets();
+                else if (currentTab === 'matches') renderMatches();
+                else if (currentTab === 'conversations') renderConversations();
+                else if (currentTab === 'messages') renderMessages();
+                else if (currentTab === 'products') renderProducts();
+                else if (currentTab === 'notifications') renderNotifications();
+
+                showMessage('数据加载成功！', 'success');
+            } catch (error) {
+                showMessage('数据加载失败: ' + error.message, 'error');
+                console.error(error);
+            } finally {
+                document.getElementById('refreshBtn').classList.remove('loading');
+            }
+        }
+
+        async function fetchData(endpoint) {
+            const response = await fetch(`${API_BASE}${endpoint}`);
+            if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+            const data = await response.json();
+            return data.data || data || [];
+        }
+
+        function updateStats() {
+            const stats = {
+                '用户': (allData.users || []).length,
+                '宠物': (allData.pets || []).length,
+                '配对': (allData.matches || []).length,
+                '对话': (allData.conversations || []).length,
+                '消息': (allData.messages || []).length,
+                '商品': (allData.products || []).length,
+                '通知': (allData.notifications || []).length
+            };
+
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = Object.entries(stats).map(([label, value]) => `
+                <div class="stat-card">
+                    <div class="stat-label">${label}</div>
+                    <div class="stat-value">${value}</div>
+                </div>
+            `).join('');
+        }
+
+        // ================= 用户相关 =================
+        function renderUsers(searchQuery = '') {
+            const users = allData.users || [];
+            const filtered = users.filter(u => 
+                !searchQuery || 
+                u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                u.username?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('usersTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">👤</div>
+                        <p>暂无用户数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>等级</th>
+                            <th>在线状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(u => `
+                            <tr>
+                                <td>${u.username}</td>
+                                <td>${u.email}</td>
+                                <td><span class="badge">${u.user_level}</span></td>
+                                <td><span class="badge ${u.online_status === 'online' ? 'active' : 'inactive'}">${u.online_status}</span></td>
+                                <td>${new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn btn-secondary" onclick="showEditModal('users', '${u.id}')">编辑</button>
+                                        <button class="btn btn-danger" onclick="deleteItem('users', '${u.id}')">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('usersTable').innerHTML = html;
+        }
+
+        // ================= 宠物相关 =================
+        function renderPets(searchQuery = '') {
+            const pets = allData.pets || [];
+            const filtered = pets.filter(p => 
+                !searchQuery || 
+                p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.breed?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('petsTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🐾</div>
+                        <p>暂无宠物数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>宠物名</th>
+                            <th>品种</th>
+                            <th>性别</th>
+                            <th>是否真实</th>
+                            <th>能量</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(p => `
+                            <tr>
+                                <td>${p.name}</td>
+                                <td>${p.breed || '未知'}</td>
+                                <td>${p.gender || '未知'}</td>
+                                <td><span class="badge ${p.is_real ? 'active' : 'inactive'}">${p.is_real ? '真实' : 'AI'}</span></td>
+                                <td>${p.energy_level || 0}%</td>
+                                <td>${new Date(p.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn btn-secondary" onclick="showEditModal('pets', '${p.id}')">编辑</button>
+                                        <button class="btn btn-danger" onclick="deleteItem('pets', '${p.id}')">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('petsTable').innerHTML = html;
+        }
+
+        // ================= 配对相关 =================
+        function renderMatches(searchQuery = '') {
+            const matches = allData.matches || [];
+            const filtered = matches.filter(m => !searchQuery || m.id?.includes(searchQuery));
+
+            if (filtered.length === 0) {
+                document.getElementById('matchesTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💕</div>
+                        <p>暂无配对数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>配对 ID</th>
+                            <th>方向</th>
+                            <th>相互关注</th>
+                            <th>兼容度</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(m => `
+                            <tr>
+                                <td>${m.id.substring(0, 8)}...</td>
+                                <td>${m.direction}</td>
+                                <td><span class="badge ${m.is_mutual ? 'active' : 'inactive'}">${m.is_mutual ? '是' : '否'}</span></td>
+                                <td>${m.compatibility_score}%</td>
+                                <td>${new Date(m.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteItem('matches', '${m.id}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('matchesTable').innerHTML = html;
+        }
+
+        // ================= 对话相关 =================
+        function renderConversations(searchQuery = '') {
+            const conversations = allData.conversations || [];
+            const filtered = conversations.filter(c => !searchQuery || c.id?.includes(searchQuery));
+
+            if (filtered.length === 0) {
+                document.getElementById('conversationsTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💬</div>
+                        <p>暂无对话数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>对话 ID</th>
+                            <th>对话类型</th>
+                            <th>最后消息</th>
+                            <th>是否活跃</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(c => `
+                            <tr>
+                                <td>${c.id.substring(0, 8)}...</td>
+                                <td>${c.conversation_type}</td>
+                                <td>${(c.last_message || '（无）').substring(0, 30)}...</td>
+                                <td><span class="badge ${c.is_active ? 'active' : 'inactive'}">${c.is_active ? '活跃' : '停用'}</span></td>
+                                <td>${new Date(c.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteItem('conversations', '${c.id}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('conversationsTable').innerHTML = html;
+        }
+
+        // ================= 消息相关 =================
+        function renderMessages(searchQuery = '') {
+            const messages = allData.messages || [];
+            const filtered = messages.filter(m => 
+                !searchQuery || 
+                m.message_text?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('messagesTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💌</div>
+                        <p>暂无消息数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>消息内容</th>
+                            <th>消息类型</th>
+                            <th>已读</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(m => `
+                            <tr>
+                                <td>${(m.message_text || '').substring(0, 50)}...</td>
+                                <td>${m.message_type}</td>
+                                <td><span class="badge ${m.is_read ? 'active' : 'inactive'}">${m.is_read ? '已读' : '未读'}</span></td>
+                                <td>${new Date(m.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteItem('messages', '${m.id}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('messagesTable').innerHTML = html;
+        }
+
+        // ================= 商品相关 =================
+        function renderProducts(searchQuery = '') {
+            const products = allData.products || [];
+            const filtered = products.filter(p => 
+                !searchQuery || 
+                p.title?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('productsTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🛍️</div>
+                        <p>暂无商品数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>商品名</th>
+                            <th>价格</th>
+                            <th>库存</th>
+                            <th>评分</th>
+                            <th>是否上架</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(p => `
+                            <tr>
+                                <td>${p.title}</td>
+                                <td>¥${p.price}</td>
+                                <td>${p.inventory}</td>
+                                <td>${p.ratings} ⭐</td>
+                                <td><span class="badge ${p.is_available ? 'active' : 'inactive'}">${p.is_available ? '上架' : '下架'}</span></td>
+                                <td>${new Date(p.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn btn-secondary" onclick="showEditModal('products', '${p.id}')">编辑</button>
+                                        <button class="btn btn-danger" onclick="deleteItem('products', '${p.id}')">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('productsTable').innerHTML = html;
+        }
+
+        // ================= 通知相关 =================
+        function renderNotifications(searchQuery = '') {
+            const notifications = allData.notifications || [];
+            const filtered = notifications.filter(n => 
+                !searchQuery || 
+                n.message?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('notificationsTable').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔔</div>
+                        <p>暂无通知数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>通知标题</th>
+                            <th>通知内容</th>
+                            <th>已读</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(n => `
+                            <tr>
+                                <td>${n.title || '（无标题）'}</td>
+                                <td>${(n.message || '').substring(0, 50)}...</td>
+                                <td><span class="badge ${n.is_read ? 'active' : 'inactive'}">${n.is_read ? '已读' : '未读'}</span></td>
+                                <td>${new Date(n.created_at).toLocaleDateString('zh-CN')}</td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteItem('notifications', '${n.id}')">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('notificationsTable').innerHTML = html;
+        }
+
+        // ================= 模态框管理 =================
+        async function showEditModal(type, id) {
+            const modal = document.getElementById('editModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+
+            let item = null;
+            if (id) {
+                item = (allData[type] || []).find(item => item.id === id);
+            }
+
+            if (type === 'users') {
+                title.textContent = item ? '编辑用户' : '新增用户';
+                body.innerHTML = `
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" name="email" value="${item?.email || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" name="username" value="${item?.username || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>昵称</label>
+                            <input type="text" name="name" value="${item?.bio || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>等级</label>
+                            <input type="number" name="user_level" value="${item?.user_level || 1}" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>在线状态</label>
+                            <select name="online_status">
+                                <option value="online" ${item?.online_status === 'online' ? 'selected' : ''}>在线</option>
+                                <option value="offline" ${item?.online_status === 'offline' ? 'selected' : ''}>离线</option>
+                                <option value="busy" ${item?.online_status === 'busy' ? 'selected' : ''}>忙碌</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                `;
+                document.getElementById('editForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+                    await saveItem('users', id, data);
+                };
+            } else if (type === 'pets') {
+                title.textContent = item ? '编辑宠物' : '新增宠物';
+                body.innerHTML = `
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label>宠物名</label>
+                            <input type="text" name="name" value="${item?.name || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>品种</label>
+                            <input type="text" name="breed" value="${item?.breed || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <select name="gender">
+                                <option value="male" ${item?.gender === 'male' ? 'selected' : ''}>公</option>
+                                <option value="female" ${item?.gender === 'female' ? 'selected' : ''}>母</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>是否真实</label>
+                            <select name="is_real">
+                                <option value="true" ${item?.is_real ? 'selected' : ''}>真实</option>
+                                <option value="false" ${!item?.is_real ? 'selected' : ''}>AI克隆</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>能量 (%)</label>
+                            <input type="number" name="energy_level" value="${item?.energy_level || 100}" min="0" max="100">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                `;
+                document.getElementById('editForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+                    await saveItem('pets', id, data);
+                };
+            } else if (type === 'products') {
+                title.textContent = item ? '编辑商品' : '新增商品';
+                body.innerHTML = `
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label>商品名</label>
+                            <input type="text" name="title" value="${item?.title || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>描述</label>
+                            <textarea name="description">${item?.description || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>价格</label>
+                            <input type="number" name="price" value="${item?.price || ''}" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>库存</label>
+                            <input type="number" name="inventory" value="${item?.inventory || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>是否上架</label>
+                            <select name="is_available">
+                                <option value="true" ${item?.is_available ? 'selected' : ''}>上架</option>
+                                <option value="false" ${!item?.is_available ? 'selected' : ''}>下架</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                `;
+                document.getElementById('editForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+                    await saveItem('products', id, data);
+                };
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function saveItem(type, id, data) {
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_BASE}/${type}/${id}` : `${API_BASE}/${type}`;
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('保存失败');
+                
+                showMessage('保存成功！', 'success');
+                closeModal();
+                loadAllData();
+            } catch (error) {
+                showMessage('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteItem(type, id) {
+            if (!confirm('确定要删除这项数据吗？')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/${type}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('删除失败');
+                
+                showMessage('删除成功！', 'success');
+                loadAllData();
+            } catch (error) {
+                showMessage('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = type;
+            msgDiv.innerHTML = msg;
+            msgDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
