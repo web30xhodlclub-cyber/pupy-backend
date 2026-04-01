@@ -1,9 +1,9 @@
 {
-  "buildCommand": "npm install && npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "express",
   "outputDirectory": "dist",
+  "nodeVersion": "18.x",
   "env": {
     "NODE_ENV": "production"
   }
