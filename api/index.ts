@@ -1,18 +1,12 @@
-import { createServer } from 'http';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { app } from '../src/server';
-
-const server = createServer(app);
-
-let isServerRunning = false;
-
-function ensureServerRunning() {
-  if (!isServerRunning) {
-    isServerRunning = true;
-  }
-}
+import { app } from '../src/server.js';
 
 export default (req: VercelRequest, res: VercelResponse) => {
-  ensureServerRunning();
-  app(req, res);
+  // Express 的 Handler 方法
+  return new Promise<void>((resolve, reject) => {
+    app(req as any, res as any, (err: any) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
 };
